@@ -1,114 +1,159 @@
-import psycopg2
-from psycopg2.extras import execute_values
+import os
+import uuid
 import random
-from datetime import datetime, timedelta
+import string
+import datetime
+import pyarrow as pa
+import pyarrow.parquet as pq
+from faker import Faker
 
-# Database connection parameters
-DB_PARAMS = {
-    'dbname': 'nike_db',
-    'user': 'nike_user',
-    'password': 'nike_password',
-    'host': 'localhost',
-    'port': '5432'
-}
+fake = Faker()
 
-def create_tables(conn):
-    with conn.cursor() as cur:
-        # Create products table
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS products (
-                product_id SERIAL PRIMARY KEY,
-                name VARCHAR(100) NOT NULL,
-                category VARCHAR(50) NOT NULL,
-                price DECIMAL(10,2) NOT NULL,
-                stock_quantity INTEGER NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        
-        # Create sales table
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS sales (
-                sale_id SERIAL PRIMARY KEY,
-                product_id INTEGER REFERENCES products(product_id),
-                quantity INTEGER NOT NULL,
-                sale_date TIMESTAMP NOT NULL,
-                total_amount DECIMAL(10,2) NOT NULL
-            )
-        """)
-    conn.commit()
+# Configuration
+DEFAULT_SIZE_GB = 1
+OUTPUT_DIR = "nike_data"
+BYTES_PER_ROW = 500  # rough estimate for row size
 
-def generate_sample_data():
-    # Sample product categories
-    categories = ['Running', 'Basketball', 'Training', 'Lifestyle', 'Football']
-    
-    # Sample product names
-    product_names = [
-        'Air Max', 'Zoom', 'Free Run', 'Air Jordan', 'Dri-FIT',
-        'React', 'Air Force', 'Blazer', 'Cortez', 'Dunk'
-    ]
-    
-    products = []
-    for i in range(20):  # Generate 20 products
-        name = f"{random.choice(product_names)} {random.randint(1, 1000)}"
-        category = random.choice(categories)
-        price = round(random.uniform(50, 300), 2)
-        stock = random.randint(10, 100)
-        products.append((name, category, price, stock))
-    
-    return products
+# Nike-specific settings
+NIKE_SEGMENTS = ["Sneakerheads", "Runners", "Athletes", "Parents"]
+NIKE_CHANNELS = ["Email", "Search", "Social", "App", "TikTok", "Instagram"]
+NIKE_CATEGORIES = ["Running", "Basketball", "Jordan", "Training", "Lifestyle"]
+NIKE_CAMPAIGNS = [
+    "Air Max Day",
+    "Back to School",
+    "Jordan Heat Drop",
+    "Run Club Boost",
+    "Black Friday Blitz"
+]
+NIKE_PLATFORMS = ["iOS", "Android", "Web"]
 
-def insert_sample_data(conn):
-    products = generate_sample_data()
-    
-    with conn.cursor() as cur:
-        # Insert products
-        execute_values(cur, """
-            INSERT INTO products (name, category, price, stock_quantity)
-            VALUES %s
-            RETURNING product_id
-        """, products)
-        
-        product_ids = [row[0] for row in cur.fetchall()]
-        
-        # Generate and insert sales data
-        sales = []
-        for _ in range(50):  # Generate 50 sales
-            product_id = random.choice(product_ids)
-            quantity = random.randint(1, 5)
-            sale_date = datetime.now() - timedelta(days=random.randint(0, 30))
-            
-            # Get product price
-            cur.execute("SELECT price FROM products WHERE product_id = %s", (product_id,))
-            price = cur.fetchone()[0]
-            total_amount = price * quantity
-            
-            sales.append((product_id, quantity, sale_date, total_amount))
-        
-        execute_values(cur, """
-            INSERT INTO sales (product_id, quantity, sale_date, total_amount)
-            VALUES %s
-        """, sales)
-    
-    conn.commit()
 
-def main():
-    try:
-        conn = psycopg2.connect(**DB_PARAMS)
-        print("Connected to PostgreSQL database")
-        
-        create_tables(conn)
-        print("Created tables successfully")
-        
-        insert_sample_data(conn)
-        print("Inserted sample data successfully")
-        
-    except Exception as e:
-        print(f"Error: {e}")
-    finally:
-        if conn:
-            conn.close()
-            print("Database connection closed")
+def random_user():
+    return {
+        "user_id": str(uuid.uuid4()),
+        "name": fake.name(),
+        "email": fake.email(),
+        "segment": random.choice(NIKE_SEGMENTS),
+        "signup_date": fake.date_this_decade()
+    }
+
+def random_product():
+    category = random.choice(NIKE_CATEGORIES)
+    return {
+        "product_id": str(uuid.uuid4()),
+        "name": f"Nike {category} {fake.word().title()}",
+        "category": category,
+        "price": round(random.uniform(60, 250), 2)
+    }
+
+def random_campaign():
+    return {
+        "campaign_id": str(uuid.uuid4()),
+        "name": random.choice(NIKE_CAMPAIGNS),
+        "channel": random.choice(NIKE_CHANNELS),
+        "start_date": fake.date_between(start_date="-2y", end_date="-1y"),
+        "end_date": fake.date_between(start_date="-1y", end_date="today")
+    }
+
+def random_ad_interaction(user_id, campaign_id):
+    ts = fake.date_time_this_year()
+    return {
+        "event_id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "campaign_id": campaign_id,
+        "event_type": random.choice(["impression", "click"]),
+        "timestamp": ts,
+        "platform": random.choice(NIKE_PLATFORMS)
+    }
+
+def random_conversion(user_id, product_id, campaign_id):
+    ts = fake.date_time_this_year()
+    return {
+        "conversion_id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "product_id": product_id,
+        "campaign_id": campaign_id,
+        "timestamp": ts,
+        "revenue": round(random.uniform(60, 300), 2)
+    }
+
+def write_parquet(data, schema, path):
+    table = pa.Table.from_pylist(data, schema=schema)
+    pq.write_table(table, path)
+
+
+def generate_nike_data(total_size_gb=DEFAULT_SIZE_GB):
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    target_rows = int((total_size_gb * (1024**3)) / BYTES_PER_ROW)
+    print(f"Generating approximately {target_rows:,} rows of data")
+
+    users, products, campaigns = [], [], []
+    ad_events, conversions = [], []
+
+    for _ in range(target_rows // 100):
+        u = random_user()
+        users.append(u)
+        p = random_product()
+        products.append(p)
+        c = random_campaign()
+        campaigns.append(c)
+
+        for _ in range(random.randint(1, 5)):
+            ad = random_ad_interaction(u["user_id"], c["campaign_id"])
+            ad_events.append(ad)
+
+        if random.random() < 0.5:
+            conversions.append(random_conversion(u["user_id"], p["product_id"], c["campaign_id"]))
+
+    write_parquet(users, pa.schema([
+        ("user_id", pa.string()),
+        ("name", pa.string()),
+        ("email", pa.string()),
+        ("segment", pa.string()),
+        ("signup_date", pa.date32())
+    ]), f"{OUTPUT_DIR}/users.parquet")
+
+    write_parquet(products, pa.schema([
+        ("product_id", pa.string()),
+        ("name", pa.string()),
+        ("category", pa.string()),
+        ("price", pa.float64())
+    ]), f"{OUTPUT_DIR}/products.parquet")
+
+    write_parquet(campaigns, pa.schema([
+        ("campaign_id", pa.string()),
+        ("name", pa.string()),
+        ("channel", pa.string()),
+        ("start_date", pa.date32()),
+        ("end_date", pa.date32())
+    ]), f"{OUTPUT_DIR}/campaigns.parquet")
+
+    write_parquet(ad_events, pa.schema([
+        ("event_id", pa.string()),
+        ("user_id", pa.string()),
+        ("campaign_id", pa.string()),
+        ("event_type", pa.string()),
+        ("timestamp", pa.timestamp("ms")),
+        ("platform", pa.string())
+    ]), f"{OUTPUT_DIR}/ad_events.parquet")
+
+    write_parquet(conversions, pa.schema([
+        ("conversion_id", pa.string()),
+        ("user_id", pa.string()),
+        ("product_id", pa.string()),
+        ("campaign_id", pa.string()),
+        ("timestamp", pa.timestamp("ms")),
+        ("revenue", pa.float64())
+    ]), f"{OUTPUT_DIR}/conversions.parquet")
+
+    print(f"Data generation complete. Files saved to {OUTPUT_DIR}/")
+
 
 if __name__ == "__main__":
-    main() 
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--size_gb", type=int, default=1, help="Size of data to generate in GB")
+    args = parser.parse_args()
+
+    generate_nike_data(args.size_gb)
