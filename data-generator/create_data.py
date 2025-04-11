@@ -1,32 +1,64 @@
 import os
 import uuid
 import random
-import string
+import json
 import datetime
 import pyarrow as pa
 import pyarrow.parquet as pq
 from faker import Faker
 
-fake = Faker()
-
 # Configuration
-DEFAULT_SIZE_GB = 1
+DEFAULT_BATCH_SIZE = 1000  # Adjust batch size as needed
 OUTPUT_DIR = "nike_data"
-BYTES_PER_ROW = 500  # rough estimate for row size
+METADATA_FILE = f"{OUTPUT_DIR}/metadata.json"
 
 # Nike-specific settings
 NIKE_SEGMENTS = ["Sneakerheads", "Runners", "Athletes", "Parents"]
 NIKE_CHANNELS = ["Email", "Search", "Social", "App", "TikTok", "Instagram"]
 NIKE_CATEGORIES = ["Running", "Basketball", "Jordan", "Training", "Lifestyle"]
 NIKE_CAMPAIGNS = [
-    "Air Max Day",
-    "Back to School",
-    "Jordan Heat Drop",
-    "Run Club Boost",
-    "Black Friday Blitz"
+    "Air Max Day", "Back to School", "Jordan Heat Drop",
+    "Run Club Boost", "Black Friday Blitz"
 ]
 NIKE_PLATFORMS = ["iOS", "Android", "Web"]
 
+# Initialize Faker
+fake = Faker()
+
+
+# ==========================  Helper Functions  ========================== #
+
+def load_last_timestamp():
+    """ Load the last processed timestamp from metadata.json """
+    if os.path.exists(METADATA_FILE):
+        with open(METADATA_FILE, "r") as f:
+            return json.load(f).get("last_timestamp", None)
+    return None
+
+
+def save_last_timestamp(timestamp):
+    """ Save the latest processed timestamp to metadata.json """
+    with open(METADATA_FILE, "w") as f:
+        json.dump({"last_timestamp": timestamp.isoformat()}, f)
+
+
+def append_parquet(data, filename, schema):
+    """ Append new data to an existing Parquet file """
+    path = f"{OUTPUT_DIR}/{filename}"
+    
+    # If file exists, append data
+    if os.path.exists(path):
+        existing_table = pq.read_table(path)
+        new_table = pa.Table.from_pylist(data, schema=pa.schema(schema))
+        merged_table = pa.concat_tables([existing_table, new_table])
+        pq.write_table(merged_table, path)
+    else:
+        # Write new file if it doesn't exist
+        table = pa.Table.from_pylist(data, schema=pa.schema(schema))
+        pq.write_table(table, path)
+
+
+# ==========================  Data Generators  ========================== #
 
 def random_user():
     return {
@@ -37,6 +69,7 @@ def random_user():
         "signup_date": fake.date_this_decade()
     }
 
+
 def random_product():
     category = random.choice(NIKE_CATEGORIES)
     return {
@@ -45,6 +78,7 @@ def random_product():
         "category": category,
         "price": round(random.uniform(60, 250), 2)
     }
+
 
 def random_campaign():
     return {
@@ -55,8 +89,14 @@ def random_campaign():
         "end_date": fake.date_between(start_date="-1y", end_date="today")
     }
 
-def random_ad_interaction(user_id, campaign_id):
+
+def random_ad_interaction(user_id, campaign_id, last_timestamp):
     ts = fake.date_time_this_year()
+    
+    # Ensure only new timestamps are generated
+    if last_timestamp and ts <= last_timestamp:
+        return None
+
     return {
         "event_id": str(uuid.uuid4()),
         "user_id": user_id,
@@ -66,8 +106,14 @@ def random_ad_interaction(user_id, campaign_id):
         "platform": random.choice(NIKE_PLATFORMS)
     }
 
-def random_conversion(user_id, product_id, campaign_id):
+
+def random_conversion(user_id, product_id, campaign_id, last_timestamp):
     ts = fake.date_time_this_year()
+    
+    # Ensure only new timestamps are generated
+    if last_timestamp and ts <= last_timestamp:
+        return None
+
     return {
         "conversion_id": str(uuid.uuid4()),
         "user_id": user_id,
@@ -77,20 +123,22 @@ def random_conversion(user_id, product_id, campaign_id):
         "revenue": round(random.uniform(60, 300), 2)
     }
 
-def write_parquet(data, schema, path):
-    table = pa.Table.from_pylist(data, schema=schema)
-    pq.write_table(table, path)
 
+# ==========================  Main Function  ========================== #
 
-def generate_nike_data(total_size_gb=DEFAULT_SIZE_GB):
+def generate_nike_data(batch_size=DEFAULT_BATCH_SIZE):
+    """ Generates new Nike data in an incremental way """
+    
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    target_rows = int((total_size_gb * (1024**3)) / BYTES_PER_ROW)
-    print(f"Generating approximately {target_rows:,} rows of data")
 
-    users, products, campaigns = [], [], []
-    ad_events, conversions = [], []
+    last_timestamp = load_last_timestamp()
+    new_timestamp = datetime.datetime.now()
 
-    for _ in range(target_rows // 100):
+    print(f"Generating new data from: {last_timestamp} to {new_timestamp}")
+
+    users, products, campaigns, ad_events, conversions = [], [], [], [], []
+
+    for _ in range(batch_size):
         u = random_user()
         users.append(u)
         p = random_product()
@@ -99,61 +147,53 @@ def generate_nike_data(total_size_gb=DEFAULT_SIZE_GB):
         campaigns.append(c)
 
         for _ in range(random.randint(1, 5)):
-            ad = random_ad_interaction(u["user_id"], c["campaign_id"])
-            ad_events.append(ad)
+            ad = random_ad_interaction(u["user_id"], c["campaign_id"], last_timestamp)
+            if ad:
+                ad_events.append(ad)
 
         if random.random() < 0.5:
-            conversions.append(random_conversion(u["user_id"], p["product_id"], c["campaign_id"]))
+            conv = random_conversion(u["user_id"], p["product_id"], c["campaign_id"], last_timestamp)
+            if conv:
+                conversions.append(conv)
 
-    write_parquet(users, pa.schema([
-        ("user_id", pa.string()),
-        ("name", pa.string()),
-        ("email", pa.string()),
-        ("segment", pa.string()),
-        ("signup_date", pa.date32())
-    ]), f"{OUTPUT_DIR}/users.parquet")
+    # Append data to Parquet files
+    append_parquet(users, "users.parquet", [
+        ("user_id", pa.string()), ("name", pa.string()), ("email", pa.string()), 
+        ("segment", pa.string()), ("signup_date", pa.date32())
+    ])
+    
+    append_parquet(products, "products.parquet", [
+        ("product_id", pa.string()), ("name", pa.string()), 
+        ("category", pa.string()), ("price", pa.float64())
+    ])
+    
+    append_parquet(campaigns, "campaigns.parquet", [
+        ("campaign_id", pa.string()), ("name", pa.string()), ("channel", pa.string()), 
+        ("start_date", pa.date32()), ("end_date", pa.date32())
+    ])
+    
+    append_parquet(ad_events, "ad_events.parquet", [
+        ("event_id", pa.string()), ("user_id", pa.string()), ("campaign_id", pa.string()), 
+        ("event_type", pa.string()), ("timestamp", pa.timestamp("ms")), ("platform", pa.string())
+    ])
+    
+    append_parquet(conversions, "conversions.parquet", [
+        ("conversion_id", pa.string()), ("user_id", pa.string()), ("product_id", pa.string()), 
+        ("campaign_id", pa.string()), ("timestamp", pa.timestamp("ms")), ("revenue", pa.float64())
+    ])
 
-    write_parquet(products, pa.schema([
-        ("product_id", pa.string()),
-        ("name", pa.string()),
-        ("category", pa.string()),
-        ("price", pa.float64())
-    ]), f"{OUTPUT_DIR}/products.parquet")
+    # Save last processed timestamp
+    save_last_timestamp(new_timestamp)
+    print(f"✅ New data generated and saved up to {new_timestamp}")
 
-    write_parquet(campaigns, pa.schema([
-        ("campaign_id", pa.string()),
-        ("name", pa.string()),
-        ("channel", pa.string()),
-        ("start_date", pa.date32()),
-        ("end_date", pa.date32())
-    ]), f"{OUTPUT_DIR}/campaigns.parquet")
 
-    write_parquet(ad_events, pa.schema([
-        ("event_id", pa.string()),
-        ("user_id", pa.string()),
-        ("campaign_id", pa.string()),
-        ("event_type", pa.string()),
-        ("timestamp", pa.timestamp("ms")),
-        ("platform", pa.string())
-    ]), f"{OUTPUT_DIR}/ad_events.parquet")
-
-    write_parquet(conversions, pa.schema([
-        ("conversion_id", pa.string()),
-        ("user_id", pa.string()),
-        ("product_id", pa.string()),
-        ("campaign_id", pa.string()),
-        ("timestamp", pa.timestamp("ms")),
-        ("revenue", pa.float64())
-    ]), f"{OUTPUT_DIR}/conversions.parquet")
-
-    print(f"Data generation complete. Files saved to {OUTPUT_DIR}/")
-
+# ==========================  Run Script  ========================== #
 
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--size_gb", type=int, default=1, help="Size of data to generate in GB")
+    parser.add_argument("--batch_size", type=int, default=DEFAULT_BATCH_SIZE, help="Number of rows per batch")
     args = parser.parse_args()
 
-    generate_nike_data(args.size_gb)
+    generate_nike_data(args.batch_size)

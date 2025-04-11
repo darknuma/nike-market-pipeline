@@ -1,16 +1,12 @@
 services:
-  postgres:
-    image: postgres:15
-    container_name: nike_postgres
-    environment:
-      POSTGRES_DB: nike_db
-      POSTGRES_USER: nike_user
-      POSTGRES_PASSWORD: nike_password
+  minio:
+    container_name: minio
     ports:
-      - "5432:5432"
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: NUMA
+      MINIO_ROOT_PASSWORD: NUMA123
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-
-volumes:
-  postgres_data: 
+      - ~/minio/data:/data
+    command: server /data --console-address ":9001"
