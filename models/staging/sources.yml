@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: raw
+    database: main
+    schema: main
+    tables:
+      - name: users
+      - name: products
+      - name: campaigns
+      - name: ad_events
+      - name: conversions 
