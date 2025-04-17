@@ -14,5 +14,26 @@ services:
     command: server /data --console-address ":9001"
 
   dagster:
-    image: ''
-    Dockerfile: 
+    build:
+      context: .
+      dockerfile: .dagster/dockerfile
+    restart: always
+    environment:
+      - name=value
+    volumes:
+      - hostPath:containerPath:ro
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      - minio
+      - dbt
+    
+    dbt:
+      build:
+        context: . 
+        dockerfile: ./dbt-project/docker
+
+    
+

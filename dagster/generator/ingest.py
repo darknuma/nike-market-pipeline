@@ -6,6 +6,7 @@ from botocore.config import Config
 from botocore.exceptions import ClientError
 import json
 from datetime import datetime
+from generator import create_data 
 
 # MinIO configuration
 MINIO_ENDPOINT = "http://localhost:9000"

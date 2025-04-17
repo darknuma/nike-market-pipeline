@@ -4,3 +4,5 @@ boto3
 dagster-dbt 
 dagster-webserver
 dbt-duckdb
+dbt-duckdb
+duckdb 
