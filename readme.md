@@ -1,46 +1,81 @@
 # Project Overview
 
-This project was inspired by Joseph M (Start Data Engineering)'s prompt on an e-commerce POC, so I implemented this assuming I was working on *Nike's E-commerce Market Attribution" the goal is to understand etl incremental batch loading with the use of PostgreSQL, for CDC and using DuckDB for processing engine, dbt for incremental modelling, analysis done on Tableau.
+This project was inspired by Joseph M (Start Data Engineering)'s prompt on an e-commerce POC, so I implemented this assuming I was working on *Nike's E-commerce Market Attribution" the goal is to understand etl incremental batch loading with the use of MinIO for storage, DuckDB for processing engine, dbt for incremental modelling, and Dagster for orchestration.
 
 We will answer questions based on this business case:
 
 ## Architecture Overview
 
-[IMAGE ARCHI]
-
-(explain the systems)
-
-do a table here for each tools explaining reasoning of use
-tool name, use,  reason for use
-
-## Data Visualization
-
-## Requirements
-
-- Docker installed on your computer
-- Knowledge of Python
-
-## How to Run
-
-(explain)
-
-```sh
-    docker compose up --build -d
+```mermaid
+graph TD
+    A[Data Generator] -->|Parquet Files| B[MinIO Storage]
+    B -->|Raw Data| C[DuckDB Warehouse]
+    C -->|Transformed Data| D[dbt Models]
+    D -->|Analytics Tables| C
+    E[Dagster] -->|Orchestrates| A
+    E -->|Orchestrates| B
+    E -->|Orchestrates| C
+    E -->|Orchestrates| D
 ```
-
-## Lessons Learned
 
 ## Tools Used
 
 | Tool Name | Use | Reason for Use |
 |-----------|-----|----------------|
-| PostgreSQL | Database Management System | - Robust and reliable relational database<br>- Excellent for structured data<br>- Strong support for complex queries<br>- Industry standard for data storage |
-| Docker | Containerization Platform | - Ensures consistent environment across different machines<br>- Easy deployment and scaling<br>- Isolates database from other system components<br>- Simplifies development setup |
-| Python (psycopg2) | Database Connection Library | - Native PostgreSQL adapter<br>- Efficient data handling<br>- Supports all PostgreSQL features<br>- Well-documented and widely used |
-| Docker Compose | Container Orchestration | - Simplifies multi-container setup<br>- Easy configuration management<br>- Streamlines development workflow<br>- Handles volume management automatically |
+| MinIO | Object Storage | - S3-compatible storage<br>- Efficient for Parquet files<br>- Supports versioning and CDC<br> |
+| DuckDB | Data Warehouse | - In-process analytical database<br>- Fast SQL queries<br>- Great for analytical workloads<br>- Simple setup and maintenance |
+| dbt | Data Transformation | - SQL-based transformations<br>- Built-in testing and documentation<br>- Incremental processing support<br>- Modular and maintainable code |
+| Dagster | Orchestration | - Pipeline dependency management<br>- Built-in monitoring and logging<br>- Easy scheduling and retries<br>- Great developer experience |
+| Docker | Containerization | - Consistent environments<br>- Easy deployment<br>- Isolates services<br>- Simple development setup |
+
+## Requirements
+
+- Docker installed on your computer
+- Python 3.8+
+- Knowledge of Python and SQL
+
+## How to Run
+
+1. Start the services:
+```sh
+docker compose up --build -d
+```
+
+2. Generate sample data:
+```sh
+python data-generator/create_data.py
+```
+
+3. Run the dbt models:
+```sh
+dbt run
+```
+
+4. Access the Dagster UI:
+```sh
+dagster dev
+```
 
 ## Project Structure
-- `docker-compose.yml`: Defines the PostgreSQL service configuration
-- `init.sql`: Contains database schema and initial data setup
-- `create_data.py`: Python script for data generation and insertion
+- `docker-compose.yml`: Defines MinIO and other service configurations
+- `data-generator/`: Contains data generation scripts
+- `models/`: dbt models for data transformation
+- `dagster/`: Dagster pipeline definitions
 - `requirements.txt`: Lists Python package dependencies
+
+## Lessons Learned
+
+1. **Data Versioning**
+   - Importance of tracking data lineage
+   - Managing incremental updates
+   - Handling CDC effectively
+
+2. **Modern Data Stack**
+   - Benefits of using specialized tools
+   - Integration between components
+   - Performance considerations
+
+3. **Best Practices**
+   - Modular code organization
+   - Testing and documentation
+   - Error handling and monitoring
