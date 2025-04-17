@@ -1,4 +1,6 @@
-psycopg2-binary==2.9.9 
 pyarrow
 faker
 boto3
+dagster-dbt 
+dagster-webserver
+dbt-duckdb
