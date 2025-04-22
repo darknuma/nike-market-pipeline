@@ -19,7 +19,7 @@ services:
       dockerfile: .dagster/dockerfile
     restart: always
     environment:
-      - name=value
+      - dbt: dbt
     volumes:
       - hostPath:containerPath:ro
     ports:
@@ -29,11 +29,18 @@ services:
     depends_on:
       - minio
       - dbt
+  
+  dbt:
+    build:
+      context: . 
+      dockerfile: ./dbt-project/dockerfile
+    restart: always
+    environment:
+      - duckdb: dbuc 
+    volumes:
+      - 
     
-    dbt:
-      build:
-        context: . 
-        dockerfile: ./dbt-project/docker
+      
 
     
 
