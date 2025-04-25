@@ -1,12 +1,21 @@
 FROM python:3.11-slim
 
-RUN apt-get update
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get install -y --no-install-recommends curl
+WORKDIR /app
 
-RUN pip install uv 
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
-RUN uv install -r requirements.txt 
+COPY . .
+
+ENV PYTHONPATH=/app
+
+CMD ["dagster", "dev", "-h", "0.0.0.0", "-p", "3000"]
 
 
 

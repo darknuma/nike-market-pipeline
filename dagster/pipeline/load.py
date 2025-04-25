@@ -3,14 +3,15 @@ import boto3
 from botocore.config import Config
 import duckdb
 import pyarrow.parquet as pq
+import pyarrow as pa
 from datetime import datetime
 import json
 
 # Configuration
-MINIO_ENDPOINT = "http://localhost:9000"
+MINIO_ENDPOINT = os.getenv('MINIO_ENDPOINT', 'http://minio:9000')  # Use Docker service name
 MINIO_BUCKET = "nike-data"
 RAW_PREFIX = "raw/"
-DB_PATH = "nike_warehouse.duckdb"
+DB_PATH = "/data/nike_warehouse.duckdb"  # Use Docker mounted path
 
 # Table schemas for DuckDB
 TABLE_SCHEMAS = {

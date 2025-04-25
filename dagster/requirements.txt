@@ -1,8 +1,8 @@
+dagster
+dagster-webserver
+dagster-dbt
+dbt-duckdb
+duckdb
 pyarrow
 faker
 boto3
-dagster-dbt 
-dagster-webserver
-dbt-duckdb
-dbt-duckdb
-duckdb 

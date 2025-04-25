@@ -1,4 +1,4 @@
 .venv 
 nike_data
 .env
-
+__pycache__
