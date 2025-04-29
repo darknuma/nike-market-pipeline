@@ -20,7 +20,8 @@ COPY ./dbt_project /app/dbt_project
 
 # Ensure data directory exists (though the op will create it)
 RUN mkdir -p /app/data-generator/nike_data
-RUN mkdir -p /data # Create directory for DuckDB data volume
+RUN mkdir -p /data 
+#Create directory for DuckDB data volume
 
 ENV PYTHONPATH=/app
 
