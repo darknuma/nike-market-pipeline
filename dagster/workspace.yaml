@@ -1,4 +1,3 @@
 load_from:
   - python_file:
-      relative_path: pipeline/repository.py
-      working_directory: . 
+      path: pipeline/repository.py

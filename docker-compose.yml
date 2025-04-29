@@ -6,9 +6,9 @@ services:
       - "9001:9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD} 
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
     env_file:
-      - .env 
+      - .env
     volumes:
       - minio_data:/data
     healthcheck:
@@ -19,16 +19,20 @@ services:
 
   dagster:
     build:
-      context: ./dagster
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./dagster/Dockerfile
     restart: always
     environment:
       - MINIO_USER=${MINIO_USER}
       - MINIO_PASSWORD=${MINIO_PASSWORD}
       - MINIO_ENDPOINT=minio:9000
+      - MINIO_BUCKET=nike-data
+      - DB_PATH=/data/nike_warehouse.duckdb
     volumes:
-      - ./dagster:/app
       - ./data-generator:/app/data-generator
+      - ./dagster:/app/dagster
+      - ./dbt_project:/app/dbt_project
+      - duckdb_data:/data
     ports:
       - "3000:3000"
     env_file:
@@ -36,8 +40,10 @@ services:
     depends_on:
       minio:
         condition: service_healthy
+      dbt:
+        condition: service_started
     command: dagster dev -h 0.0.0.0 -p 3000
-  
+
   dbt:
     build:
       context: ./dbt_project
@@ -53,10 +59,21 @@ services:
       minio:
         condition: service_healthy
     command: dbt debug
+  
+  metabase:
+    image: 'metabase/metabase:latest'
+    restart: always
+    ports:
+      - "4000:3000"
+    volumes:
+      - duckdb_data:/data
+    environment:
+      - MB_DB_TYPE=duckdb
+      - MB_DB_DBNAME=/data/nike_warehouse.duckdb
+    depends_on:
+      - dagster
+      - dbt
 
 volumes:
   minio_data:
   duckdb_data:
-
-    
-

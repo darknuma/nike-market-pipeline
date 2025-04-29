@@ -14,3 +14,6 @@ nike_market_pipeline:
         s3_secret_access_key: '{{ env_var("MINIO_PASSWORD") }}'
         s3_use_ssl: false
         s3_url_style: 'path' 
+
+
+
