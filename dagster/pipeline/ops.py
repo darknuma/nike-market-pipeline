@@ -425,21 +425,6 @@ def load_raw_data_to_duckdb_op(context, uploaded_files_info: List[Dict[str, str]
     return Nothing
 
 
-# You will also need ops for running dbt models.
-# The dagster-dbt library provides utilities for this.
-# Assuming your dbt project is in ./dbt_project
-from dagster_dbt import dbt_cli_resource, dbt_run_op
-
-# Configure the dbt CLI resource to point to your project and profile
-@resource(config_schema={"project_dir": str, "profiles_dir": str})
-def my_dbt_cli_resource(context):
-    return dbt_cli_resource.configured(
-        {
-            "project_dir": context.resource_config["project_dir"],
-            "profiles_dir": context.resource_config["profiles_dir"],
-        }
-    )(context)
-
 
 # Define an op to run dbt models (e.g., your silver layer)
 @op(required_resource_keys={"dbt"})

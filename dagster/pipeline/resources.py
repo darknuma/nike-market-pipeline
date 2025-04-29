@@ -4,6 +4,8 @@ from botocore.config import Config
 import duckdb
 from dagster import resource, ConfigurableResource
 from typing import Any
+from dagster_dbt import dbt_cli_resource, dbt_run_op
+
 
 @resource
 def minio_resource(context):
@@ -56,3 +58,14 @@ class DataGenerationConfig(ConfigurableResource):
 #     Resource that provides a MinIO client for object storage operations.
 #     """
 #     return True 
+
+
+# Configure the dbt CLI resource to point to your project and profile
+@resource(config_schema={"project_dir": str, "profiles_dir": str})
+def my_dbt_cli_resource(context):
+    return dbt_cli_resource.configured(
+        {
+            "project_dir": context.resource_config["project_dir"],
+            "profiles_dir": context.resource_config["profiles_dir"],
+        }
+    )(context)
