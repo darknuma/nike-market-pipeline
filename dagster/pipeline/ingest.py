@@ -6,7 +6,7 @@ from botocore.config import Config
 from botocore.exceptions import ClientError
 import json
 from datetime import datetime
-from data-generator import create_data 
+
 
 MINIO_ENDPOINT = "http://localhost:9000"
 MINIO_BUCKET = "nike-data"
@@ -20,7 +20,6 @@ def get_minio_client():
         aws_access_key_id=os.getenv('MINIO_USER'),
         aws_secret_access_key=os.getenv('MINIO_PASSWORD'),
         config=Config(signature_version='s3v4'),
-        # region_name='us-east-1'  # MinIO doesn't care about region, but boto3 requires it
     )
 
 def ensure_bucket_exists(client):
