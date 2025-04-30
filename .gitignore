@@ -24,3 +24,9 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg 
+dagster_loc/.telemetry/
+dagster_loc/.nux/
+dagster_loc/logs/
+dagster_loc/storage/
+dbt_project/target/
+ dbt_project/logs/

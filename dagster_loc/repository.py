@@ -1,4 +1,4 @@
-from .pipeline.definitions import nike_data_repo
+from .pipeline.definitions import defs
 
 # Re-export the repository
-__all__ = ["nike_data_repo"]
+__all__ = ["defs"]

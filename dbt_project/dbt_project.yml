@@ -18,9 +18,10 @@ clean-targets:
 
 models:
   nike_market_pipeline:
+    materialized: table
     staging:
-      +materialized: view
+      materialized: view
     intermediate:
-      +materialized: view
+      materialized: view
     marts:
-      +materialized: table 
+      materialized: table 

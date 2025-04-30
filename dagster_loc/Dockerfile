@@ -3,11 +3,11 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-COPY ./dagster/requirements.txt /app/requirements.txt
+COPY ./dagster_loc/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy your application code
-COPY ./dagster /app/dagster
+COPY ./dagster_loc /app/dagster_loc
 COPY ./data-generator /app/data-generator
 COPY ./dbt_project /app/dbt_project
 

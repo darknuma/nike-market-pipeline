@@ -3,10 +3,11 @@ nike_market_pipeline:
   outputs:
     dev:
       type: duckdb
-      path: /data/nike_warehouse.duckdb  # This will be mounted in docker-compose
+      path: /data/nike_market.duckdb
+      threads: 4
       extensions:
-        - httpfs
         - parquet
+        - httpfs
       external_root: 's3://nike-data'  # MinIO bucket
       settings:
         s3_endpoint: 'minio:9000'  # Docker service name
@@ -17,3 +18,17 @@ nike_market_pipeline:
 
 
 
+
+nike_market_pipeline:
+  outputs:
+    dev:
+      type: duckdb
+      path: dev.duckdb
+      threads: 1
+
+    prod:
+      type: duckdb
+      path: prod.duckdb
+      threads: 4
+
+  target: dev
