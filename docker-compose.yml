@@ -29,6 +29,7 @@ services:
       - MINIO_BUCKET=nike-data
       - DB_PATH=/data/nike_warehouse.duckdb
       - DAGSTER_HOME=/app/dagster_loc
+      - PYTHONPATH=/app
     volumes:
       - ./data-generator:/app/data-generator
       - ./dagster_loc:/app/dagster_loc
@@ -59,8 +60,7 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-    command: dbt debug
-  
+
   metabase:
     image: 'metabase/metabase:latest'
     restart: always
@@ -70,9 +70,7 @@ services:
       - duckdb_data:/data
       - metabase_data:/metabase-data
     environment:
-      # Use H2 as the default database for Metabase's own metadata
       - MB_DB_TYPE=h2
-      # Remove the DuckDB configuration that was causing the error
     depends_on:
       - dagster
       - dbt

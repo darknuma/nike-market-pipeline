@@ -15,6 +15,15 @@ from dagster import (
     Definitions
 )
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
+from .create_data import generate_nike_data
+
+# from .assets.raw_data_assets import (
+#     raw_ad_events,
+#     raw_campaigns,
+#     raw_conversions,
+#     raw_products,
+#     raw_users
+# )
 
 # ============= RESOURCES =============
 
@@ -83,17 +92,103 @@ def raw_inventory_data(context: AssetExecutionContext) -> pd.DataFrame:
     context.log.info("Loading raw inventory data")
     return pd.DataFrame()
 
+@asset
+def raw_ad_events(context: AssetExecutionContext) -> None:
+    """Load raw ad events data into DuckDB."""
+    conn = duckdb.connect(database='/data/nike_market.duckdb')
+    conn.execute("""
+        CREATE SCHEMA IF NOT EXISTS raw;
+        CREATE TABLE IF NOT EXISTS raw.ad_events (
+            event_id VARCHAR,
+            user_id VARCHAR,
+            campaign_id VARCHAR,
+            event_type VARCHAR,
+            timestamp TIMESTAMP,
+            platform VARCHAR,
+            _loaded_at TIMESTAMP
+        );
+    """)
+    conn.close()
+
+@asset
+def raw_campaigns(context: AssetExecutionContext) -> None:
+    """Load raw campaigns data into DuckDB."""
+    conn = duckdb.connect(database='/data/nike_market.duckdb')
+    conn.execute("""
+        CREATE SCHEMA IF NOT EXISTS raw;
+        CREATE TABLE IF NOT EXISTS raw.campaigns (
+            campaign_id VARCHAR,
+            campaign_name VARCHAR,
+            start_date DATE,
+            end_date DATE,
+            budget DECIMAL,
+            _loaded_at TIMESTAMP
+        );
+    """)
+    conn.close()
+
+@asset
+def raw_conversions(context: AssetExecutionContext) -> None:
+    """Load raw conversions data into DuckDB."""
+    conn = duckdb.connect(database='/data/nike_market.duckdb')
+    conn.execute("""
+        CREATE SCHEMA IF NOT EXISTS raw;
+        CREATE TABLE IF NOT EXISTS raw.conversions (
+            conversion_id VARCHAR,
+            user_id VARCHAR,
+            campaign_id VARCHAR,
+            product_id VARCHAR,
+            timestamp TIMESTAMP,
+            revenue DECIMAL,
+            _loaded_at TIMESTAMP
+        );
+    """)
+    conn.close()
+
+@asset
+def raw_products(context: AssetExecutionContext) -> None:
+    """Load raw products data into DuckDB."""
+    conn = duckdb.connect(database='/data/nike_market.duckdb')
+    conn.execute("""
+        CREATE SCHEMA IF NOT EXISTS raw;
+        CREATE TABLE IF NOT EXISTS raw.products (
+            product_id VARCHAR,
+            product_name VARCHAR,
+            category VARCHAR,
+            price DECIMAL,
+            _loaded_at TIMESTAMP
+        );
+    """)
+    conn.close()
+
+@asset
+def raw_users(context: AssetExecutionContext) -> None:
+    """Load raw users data into DuckDB."""
+    conn = duckdb.connect(database='/data/nike_market.duckdb')
+    conn.execute("""
+        CREATE SCHEMA IF NOT EXISTS raw;
+        CREATE TABLE IF NOT EXISTS raw.users (
+            user_id VARCHAR,
+            email VARCHAR,
+            country VARCHAR,
+            created_at TIMESTAMP,
+            _loaded_at TIMESTAMP
+        );
+    """)
+    conn.close() 
 # ============= OPS =============
 
 @op
 def generate_nike_data_op(context):
-    context.log.info("Generating Nike data")
-    return {"files": ["sales.csv", "inventory.csv"]}
+    from create_data import generate_nike_data
+    context.log.info("Generating and uploading data to MinIO...")
+    return generate_nike_data(batch_size=1000)
 
-@op
-def upload_raw_data_to_minio_op(context, generated_files):
-    context.log.info(f"Uploading files to MinIO: {generated_files}")
-    return {"uploaded_files": generated_files["files"]}
+
+# @op
+# def upload_raw_data_to_minio_op(context, generated_files):
+#     context.log.info(f"Uploading files to MinIO: {generated_files}")
+#     return {"uploaded_files": generated_files["files"]}
 
 @op
 def load_raw_data_to_duckdb_op(context, uploaded_files_info):
@@ -120,8 +215,7 @@ def run_dbt_models_op(context, start_after):
 )
 def nike_data_pipeline():
     generated_files = generate_nike_data_op()
-    uploaded_files_info = upload_raw_data_to_minio_op(generated_files=generated_files)
-    raw_load_complete = load_raw_data_to_duckdb_op(uploaded_files_info=uploaded_files_info)
+    raw_load_complete = load_raw_data_to_duckdb_op(uploaded_files_info=generated_files)
     run_dbt_models_op(start_after=raw_load_complete)
 
 # ============= SCHEDULE =============
@@ -144,6 +238,11 @@ defs = Definitions(
     assets=[
         raw_sales_data,
         raw_inventory_data,
+        raw_ad_events,
+        raw_campaigns,
+        raw_conversions,
+        raw_products,
+        raw_users,
         nike_dbt_assets,
     ],
     jobs=[nike_data_pipeline],
