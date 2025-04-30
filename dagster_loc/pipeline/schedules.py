@@ -1,4 +1,4 @@
-from dagster import schedule
+from dagster_loc import schedule
 from .jobs import nike_data_pipeline
 
 @schedule(cron_schedule="0 * * * *", job=nike_data_pipeline, execution_timezone="UTC")

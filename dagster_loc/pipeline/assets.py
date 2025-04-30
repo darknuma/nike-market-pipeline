@@ -1,4 +1,4 @@
-from dagster import AssetsDefinition
+from dagster_loc import AssetsDefinition
 from dagster_dbt import load_assets_from_dbt_project
 import os
 

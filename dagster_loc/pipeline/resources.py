@@ -2,7 +2,7 @@ import os
 import boto3
 from botocore.config import Config
 import duckdb
-from dagster import resource, ConfigurableResource
+from dagster_loc import resource, ConfigurableResource
 from typing import Any
 from dagster_dbt import dbt_cli_resource, dbt_run_op
 

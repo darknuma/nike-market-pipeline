@@ -9,7 +9,7 @@ from faker import Faker
 import boto3
 from botocore.exceptions import ClientError
 import duckdb
-from dagster import op, get_dagster_logger, In, Out, Nothing
+from dagster_loc import op, get_dagster_logger, In, Out, Nothing
 from typing import List, Dict, Tuple
 
 # Configuration (can be moved to resources or op configs if needed)

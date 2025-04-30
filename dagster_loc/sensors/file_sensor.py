@@ -1,4 +1,4 @@
-from dagster import RunRequest, sensor, SensorEvaluationContext
+from dagster_loc import RunRequest, sensor, SensorEvaluationContext
 from datetime import datetime, timedelta
 
 @sensor(job_name="process_new_data")

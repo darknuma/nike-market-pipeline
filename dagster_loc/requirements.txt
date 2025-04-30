@@ -6,3 +6,5 @@ duckdb
 pyarrow
 faker
 boto3
+pandas 
+

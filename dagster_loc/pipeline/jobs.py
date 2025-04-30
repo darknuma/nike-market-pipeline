@@ -1,4 +1,4 @@
-from dagster import job
+from dagster_loc import job
 from .ops import (
     generate_nike_data_op,
     upload_raw_data_to_minio_op,
