@@ -20,7 +20,7 @@ services:
   dagster:
     build:
       context: .
-      dockerfile: ./dagster/Dockerfile
+      dockerfile: ./dagster_loc/Dockerfile
     restart: always
     environment:
       - MINIO_USER=${MINIO_USER}
@@ -28,9 +28,10 @@ services:
       - MINIO_ENDPOINT=minio:9000
       - MINIO_BUCKET=nike-data
       - DB_PATH=/data/nike_warehouse.duckdb
+      - DAGSTER_HOME=/app/dagster_loc
     volumes:
       - ./data-generator:/app/data-generator
-      - ./dagster:/app/dagster
+      - ./dagster_loc:/app/dagster_loc
       - ./dbt_project:/app/dbt_project
       - duckdb_data:/data
     ports:
@@ -42,7 +43,7 @@ services:
         condition: service_healthy
       dbt:
         condition: service_started
-    command: dagster dev -h 0.0.0.0 -p 3000
+    command: dagster dev -h 0.0.0.0 -p 3000 -m dagster_loc.repository
 
   dbt:
     build:
@@ -67,9 +68,11 @@ services:
       - "4000:3000"
     volumes:
       - duckdb_data:/data
+      - metabase_data:/metabase-data
     environment:
-      - MB_DB_TYPE=duckdb
-      - MB_DB_DBNAME=/data/nike_warehouse.duckdb
+      # Use H2 as the default database for Metabase's own metadata
+      - MB_DB_TYPE=h2
+      # Remove the DuckDB configuration that was causing the error
     depends_on:
       - dagster
       - dbt
@@ -77,3 +80,4 @@ services:
 volumes:
   minio_data:
   duckdb_data:
+  metabase_data:

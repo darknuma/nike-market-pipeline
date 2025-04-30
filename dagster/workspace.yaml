@@ -1,3 +1,0 @@
-load_from:
-  - python_file:
-      path: pipeline/repository.py
