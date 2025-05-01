@@ -13,7 +13,8 @@ from dagster import (
     schedule,
     ConfigurableResource,
     AssetExecutionContext,
-    Definitions
+    Definitions,
+    Config,  # Import Config for op configuration
 )
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 from .create_data import generate_nike_data
@@ -67,6 +68,10 @@ def duckdb_resource(context):
 class DataGenerationConfig(ConfigurableResource):
     output_dir: str = "nike_data"
     metadata_file: str = "nike_data/metadata.json"
+
+# Define configuration classes for ops
+class GenerateUploadConfig(Config):
+    batch_size: int = 1000
 
 # ============= DBT ASSETS (Modern API) =============
 
@@ -168,13 +173,17 @@ def raw_users(context: AssetExecutionContext) -> None:
 
 # ============= OPS =============
 
-@op(required_resource_keys={"minio_resource"})
+@op(required_resource_keys={"minio_resource"}, config_schema=GenerateUploadConfig)
 def generate_and_upload_nike_data_op(context):
     """Generate Nike data and upload directly to MinIO"""
     context.log.info("Generating Nike data and uploading to MinIO...")
     
+    # Access the batch_size from the config
+    batch_size = context.op_config.batch_size
+    context.log.info(f"Using batch size: {batch_size}")
+    
     # The generate_nike_data function already uploads to MinIO and returns the uploaded keys
-    result = generate_nike_data(batch_size=1000)
+    result = generate_nike_data(batch_size=batch_size)
     context.log.info(f"Generated and uploaded data to MinIO: {result}")
     
     # Extract the keys from the result for further processing
@@ -314,6 +323,10 @@ def nike_data_pipeline():
 
 @schedule(cron_schedule="0 * * * *", job=nike_data_pipeline, execution_timezone="UTC")
 def hourly_nike_data_schedule(context):
+    """
+    Schedule for hourly execution of the Nike data pipeline.
+    This returns the correct op config structure that Dagster expects.
+    """
     return {
         "ops": {
             "generate_and_upload_nike_data_op": {
