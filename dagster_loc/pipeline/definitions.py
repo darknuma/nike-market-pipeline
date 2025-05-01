@@ -173,20 +173,20 @@ def raw_users(context: AssetExecutionContext) -> None:
 
 # ============= OPS =============
 
-@op(required_resource_keys={"minio_resource"}, config_schema=GenerateUploadConfig)
+@op(
+    required_resource_keys={"minio_resource"},
+)
 def generate_and_upload_nike_data_op(context):
     """Generate Nike data and upload directly to MinIO"""
     context.log.info("Generating Nike data and uploading to MinIO...")
     
-    # Access the batch_size from the config
-    batch_size = context.op_config.batch_size
+    batch_size = 1000
+
     context.log.info(f"Using batch size: {batch_size}")
     
-    # The generate_nike_data function already uploads to MinIO and returns the uploaded keys
     result = generate_nike_data(batch_size=batch_size)
     context.log.info(f"Generated and uploaded data to MinIO: {result}")
     
-    # Extract the keys from the result for further processing
     uploaded_keys = result["uploaded_keys"]
     return {"uploaded_keys": uploaded_keys}
 
@@ -197,12 +197,10 @@ def load_raw_data_to_duckdb_op(context, data_keys):
     duckdb_conn = context.resources.duckdb_resource
     bucket_name = os.getenv('MINIO_BUCKET', 'nike-data')
     
-    # Retrieve uploaded_keys from the previous op's output
     uploaded_keys = data_keys["uploaded_keys"]
     context.log.info(f"Processing {len(uploaded_keys)} keys to load into DuckDB")
 
     for key in uploaded_keys:
-        # Skip metadata files
         if key.startswith("metadata/"):
             continue
             
@@ -330,9 +328,6 @@ def hourly_nike_data_schedule(context):
     return {
         "ops": {
             "generate_and_upload_nike_data_op": {
-                "config": {
-                    "batch_size": 500
-                }
             }
         }
     }
