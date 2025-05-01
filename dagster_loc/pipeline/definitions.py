@@ -2,7 +2,7 @@ import os
 import io
 from pathlib import Path
 import boto3
-from botocore.config import Config
+from botocore.config import Config as BotoConfig 
 import duckdb
 import pandas as pd
 from dagster import (
@@ -14,7 +14,8 @@ from dagster import (
     ConfigurableResource,
     AssetExecutionContext,
     Definitions,
-    Config,  # Import Config for op configuration
+    Config,
+    OpExecutionContext
 )
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 from .create_data import generate_nike_data
@@ -41,7 +42,7 @@ def minio_resource(context):
         endpoint_url=minio_endpoint,
         aws_access_key_id=minio_user,
         aws_secret_access_key=minio_password,
-        config=Config(signature_version='s3v4'),
+        config=BotoConfig(signature_version='s3v4'),
         region_name='us-east-1'
     )
 
@@ -293,10 +294,34 @@ def load_raw_data_to_duckdb_op(context, data_keys):
     
     return True
 
-@op
-def run_dbt_models_op(context, start_after):
-    context.log.info("Running dbt models")
-    return True
+@op(required_resource_keys={"dbt"}) # Only requires dbt resource
+def run_dbt_models_op(context: OpExecutionContext, start_after): # Input name should match upstream output
+    """Runs dbt build command."""
+    # The 'start_after' input ensures this op runs after the previous one completes.
+    # Its value (the dict from load_raw_data_to_duckdb_op) isn't explicitly used here,
+    # but the dependency is enforced by Dagster.
+    context.log.info(f"Received start signal: {start_after}. Running dbt models...")
+
+    dbt_cli_resource = context.resources.dbt
+
+    try:
+        # Use stream() to get real-time logs in Dagster UI
+        dbt_cli_invocation = dbt_cli_resource.cli(["build"], context=context)
+        for log_line in dbt_cli_invocation.stream():
+            context.log.info(log_line) # Stream dbt logs to Dagster logs
+
+        # Check for success
+        dbt_cli_invocation.wait() # Wait for completion
+        context.log.info("dbt build completed successfully.")
+        # You could potentially inspect dbt_cli_invocation.get_artifact("run_results.json")
+        # for more detailed results if needed.
+
+    except Exception as e:
+        context.log.error("dbt build command failed.")
+        context.log.exception(e)
+        raise # Fail the op if dbt fails
+
+    return True # Indicate success
 
 # ============= JOB =============
 
@@ -304,10 +329,6 @@ def run_dbt_models_op(context, start_after):
     resource_defs={
         "minio_resource": minio_resource,
         "duckdb_resource": duckdb_resource,
-        "data_gen_config": DataGenerationConfig(
-            output_dir="/app/data-generator/nike_data",
-            metadata_file="/app/data-generator/nike_data/metadata.json"
-        ),
         "dbt": dbt_resource
     }
 )
@@ -328,8 +349,11 @@ def hourly_nike_data_schedule(context):
     return {
         "ops": {
             "generate_and_upload_nike_data_op": {
+                 "config": {
+                "batch_size": 2000  # Or whatever value you want
             }
         }
+    }
     }
 
 # ============= DEFINITIONS =============
@@ -349,9 +373,5 @@ defs = Definitions(
         "minio_resource": minio_resource,
         "duckdb_resource": duckdb_resource,
         "dbt": dbt_resource,
-        "data_gen_config": DataGenerationConfig(
-            output_dir="/app/data-generator/nike_data",
-            metadata_file="/app/data-generator/nike_data/metadata.json"
-        )
     }
 )

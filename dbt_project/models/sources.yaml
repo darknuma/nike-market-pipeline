@@ -1,0 +1,17 @@
+version: 2
+
+sources:
+  - name: raw
+    database: nike_market
+    schema: main
+    tables:
+      - name: ad_events
+        description: "Raw ad events data"
+      - name: campaigns
+        description: "Raw campaigns data"
+      - name: conversions
+        description: "Raw conversions data"
+      - name: products
+        description: "Raw products data"
+      - name: users
+        description: "Raw users data" 
