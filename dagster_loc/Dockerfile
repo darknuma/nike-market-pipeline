@@ -19,6 +19,6 @@ RUN mkdir -p /data
 # These are picked up by the resources in your Python code
 ENV MINIO_USER=${MINIO_USER}
 ENV MINIO_PASSWORD=${MINIO_PASSWORD}
-ENV MINIO_ENDPOINT=minio:9000 
+ENV MINIO_ENDPOINT=http://minio:9000
 ENV MINIO_BUCKET=nike-data
 ENV DB_PATH=/data/nike_warehouse.duckdb 

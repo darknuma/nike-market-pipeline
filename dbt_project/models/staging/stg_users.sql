@@ -7,7 +7,7 @@
 }}
 
 with source as (
-    select * from {{ source('raw', 'users') }}
+    select * from "raw"."users"
 ),
 
 latest_records as (

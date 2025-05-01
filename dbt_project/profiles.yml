@@ -14,21 +14,9 @@ nike_market_pipeline:
         s3_access_key_id: '{{ env_var("MINIO_USER") }}'
         s3_secret_access_key: '{{ env_var("MINIO_PASSWORD") }}'
         s3_use_ssl: false
-        s3_url_style: 'path' 
-
-
-
-
-nike_market_pipeline:
-  outputs:
-    dev:
-      type: duckdb
-      path: dev.duckdb
-      threads: 1
+        s3_url_style: 'path'
 
     prod:
       type: duckdb
       path: prod.duckdb
       threads: 4
-
-  target: dev

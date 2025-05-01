@@ -1,4 +1,5 @@
 import os
+import io
 from pathlib import Path
 import boto3
 from botocore.config import Config
@@ -17,24 +18,22 @@ from dagster import (
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 from .create_data import generate_nike_data
 
-# from .assets.raw_data_assets import (
-#     raw_ad_events,
-#     raw_campaigns,
-#     raw_conversions,
-#     raw_products,
-#     raw_users
-# )
-
 # ============= RESOURCES =============
 
 @resource
 def minio_resource(context):
-    minio_endpoint = os.getenv('MINIO_ENDPOINT', 'http://minio:9000')
+    minio_endpoint = os.getenv('MINIO_ENDPOINT', 'http://minio:9000') # Default with scheme and service name
+
+    # Ensure the endpoint has a scheme if it's missing
+    if not minio_endpoint.startswith('http://') and not minio_endpoint.startswith('https://'):
+         minio_endpoint = f'http://{minio_endpoint}' # Default to http if no scheme
+
     minio_user = os.getenv('MINIO_USER')
     minio_password = os.getenv('MINIO_PASSWORD')
 
     if not minio_user or not minio_password:
-        raise Exception("MINIO_USER and MINIO_PASSWORD environment variables must be set.")
+        context.log.error("MINIO_USER and MINIO_PASSWORD environment variables must be set.")
+        raise Exception("MinIO credentials not set.")
 
     client = boto3.client(
         's3',
@@ -81,16 +80,6 @@ def nike_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 
 # ============= RAW DATA ASSETS =============
-
-@asset
-def raw_sales_data(context: AssetExecutionContext) -> pd.DataFrame:
-    context.log.info("Loading raw sales data")
-    return pd.DataFrame()
-
-@asset
-def raw_inventory_data(context: AssetExecutionContext) -> pd.DataFrame:
-    context.log.info("Loading raw inventory data")
-    return pd.DataFrame()
 
 @asset
 def raw_ad_events(context: AssetExecutionContext) -> None:
@@ -176,23 +165,125 @@ def raw_users(context: AssetExecutionContext) -> None:
         );
     """)
     conn.close() 
+
 # ============= OPS =============
 
-@op
-def generate_nike_data_op(context):
-    from create_data import generate_nike_data
-    context.log.info("Generating and uploading data to MinIO...")
-    return generate_nike_data(batch_size=1000)
+@op(required_resource_keys={"minio_resource"})
+def generate_and_upload_nike_data_op(context):
+    """Generate Nike data and upload directly to MinIO"""
+    context.log.info("Generating Nike data and uploading to MinIO...")
+    
+    # The generate_nike_data function already uploads to MinIO and returns the uploaded keys
+    result = generate_nike_data(batch_size=1000)
+    context.log.info(f"Generated and uploaded data to MinIO: {result}")
+    
+    # Extract the keys from the result for further processing
+    uploaded_keys = result["uploaded_keys"]
+    return {"uploaded_keys": uploaded_keys}
 
+@op(required_resource_keys={"minio_resource", "duckdb_resource"})
+def load_raw_data_to_duckdb_op(context, data_keys):
+    """Load data from MinIO into DuckDB"""
+    minio_client = context.resources.minio_resource
+    duckdb_conn = context.resources.duckdb_resource
+    bucket_name = os.getenv('MINIO_BUCKET', 'nike-data')
+    
+    # Retrieve uploaded_keys from the previous op's output
+    uploaded_keys = data_keys["uploaded_keys"]
+    context.log.info(f"Processing {len(uploaded_keys)} keys to load into DuckDB")
 
-# @op
-# def upload_raw_data_to_minio_op(context, generated_files):
-#     context.log.info(f"Uploading files to MinIO: {generated_files}")
-#     return {"uploaded_files": generated_files["files"]}
-
-@op
-def load_raw_data_to_duckdb_op(context, uploaded_files_info):
-    context.log.info(f"Loading files from MinIO to DuckDB: {uploaded_files_info}")
+    for key in uploaded_keys:
+        # Skip metadata files
+        if key.startswith("metadata/"):
+            continue
+            
+        context.log.info(f"Loading {key} into DuckDB")
+        
+        try:
+            # Stream file from MinIO
+            obj = minio_client.get_object(Bucket=bucket_name, Key=key)
+            parquet_bytes = obj['Body'].read()
+            
+            # Get the dataset name from the key (format: "dataset_name/timestamp.parquet")
+            dataset_name = key.split('/')[0]
+            context.log.info(f"Loading data for dataset: {dataset_name}")
+            
+            # Load into DuckDB from in-memory bytes
+            df = pd.read_parquet(io.BytesIO(parquet_bytes))
+            
+            # Add _loaded_at timestamp
+            df['_loaded_at'] = pd.Timestamp.now()
+            
+            # Ensure raw schema exists
+            duckdb_conn.execute("CREATE SCHEMA IF NOT EXISTS raw")
+            
+            # Create table if not exists based on dataset name
+            # Assume consistent schema for each dataset type
+            if dataset_name == "users":
+                duckdb_conn.execute("""
+                    CREATE TABLE IF NOT EXISTS raw.users (
+                        user_id VARCHAR,
+                        name VARCHAR,
+                        email VARCHAR,
+                        segment VARCHAR,
+                        signup_date DATE,
+                        _loaded_at TIMESTAMP
+                    )
+                """)
+            elif dataset_name == "products":
+                duckdb_conn.execute("""
+                    CREATE TABLE IF NOT EXISTS raw.products (
+                        product_id VARCHAR,
+                        name VARCHAR,
+                        category VARCHAR,
+                        price DOUBLE,
+                        _loaded_at TIMESTAMP
+                    )
+                """)
+            elif dataset_name == "campaigns":
+                duckdb_conn.execute("""
+                    CREATE TABLE IF NOT EXISTS raw.campaigns (
+                        campaign_id VARCHAR,
+                        name VARCHAR,
+                        channel VARCHAR,
+                        start_date DATE,
+                        end_date DATE,
+                        _loaded_at TIMESTAMP
+                    )
+                """)
+            elif dataset_name == "ad_events":
+                duckdb_conn.execute("""
+                    CREATE TABLE IF NOT EXISTS raw.ad_events (
+                        event_id VARCHAR,
+                        user_id VARCHAR,
+                        campaign_id VARCHAR,
+                        event_type VARCHAR,
+                        timestamp TIMESTAMP,
+                        platform VARCHAR,
+                        _loaded_at TIMESTAMP
+                    )
+                """)
+            elif dataset_name == "conversions":
+                duckdb_conn.execute("""
+                    CREATE TABLE IF NOT EXISTS raw.conversions (
+                        conversion_id VARCHAR,
+                        user_id VARCHAR,
+                        product_id VARCHAR,
+                        campaign_id VARCHAR,
+                        timestamp TIMESTAMP,
+                        revenue DOUBLE,
+                        _loaded_at TIMESTAMP
+                    )
+                """)
+            
+            # Insert data
+            duckdb_conn.execute(f"INSERT INTO raw.{dataset_name} SELECT * FROM df")
+            context.log.info(f"Successfully loaded {len(df)} rows into raw.{dataset_name}")
+            
+        except Exception as e:
+            context.log.error(f"Error loading {key} into DuckDB: {str(e)}")
+            raise
+    
     return True
 
 @op
@@ -214,8 +305,9 @@ def run_dbt_models_op(context, start_after):
     }
 )
 def nike_data_pipeline():
-    generated_files = generate_nike_data_op()
-    raw_load_complete = load_raw_data_to_duckdb_op(uploaded_files_info=generated_files)
+    """Main ETL pipeline for Nike data processing"""
+    data_keys = generate_and_upload_nike_data_op()
+    raw_load_complete = load_raw_data_to_duckdb_op(data_keys=data_keys)
     run_dbt_models_op(start_after=raw_load_complete)
 
 # ============= SCHEDULE =============
@@ -224,7 +316,7 @@ def nike_data_pipeline():
 def hourly_nike_data_schedule(context):
     return {
         "ops": {
-            "generate_nike_data_op": {
+            "generate_and_upload_nike_data_op": {
                 "config": {
                     "batch_size": 500
                 }
@@ -236,8 +328,6 @@ def hourly_nike_data_schedule(context):
 
 defs = Definitions(
     assets=[
-        raw_sales_data,
-        raw_inventory_data,
         raw_ad_events,
         raw_campaigns,
         raw_conversions,

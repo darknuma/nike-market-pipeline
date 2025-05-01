@@ -25,7 +25,7 @@ services:
     environment:
       - MINIO_USER=${MINIO_USER}
       - MINIO_PASSWORD=${MINIO_PASSWORD}
-      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ENDPOINT=http://minio:9000
       - MINIO_BUCKET=nike-data
       - DB_PATH=/data/nike_warehouse.duckdb
       - DAGSTER_HOME=/app/dagster_loc
@@ -54,6 +54,7 @@ services:
     environment:
       - MINIO_USER=${MINIO_USER}
       - MINIO_PASSWORD=${MINIO_PASSWORD}
+      - MINIO_ENDPOINT=http://minio:9000
     volumes:
       - ./dbt_project:/dbt
       - duckdb_data:/data
