@@ -17,7 +17,7 @@ conversions as (
 daily_events as (
     select
         campaign_id,
-        date(timestamp) as date,
+        CAST(timestamp AS DATE) as date,
         count(*) as total_events,
         countif(event_type = 'impression') as impressions,
         countif(event_type = 'click') as clicks,
@@ -29,7 +29,7 @@ daily_events as (
 daily_conversions as (
     select
         campaign_id,
-        date(timestamp) as date,
+        CAST(timestamp AS DATE) as date,
         count(*) as conversions,
         sum(revenue) as revenue,
         max(_loaded_at) as _loaded_at

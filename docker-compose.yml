@@ -62,8 +62,24 @@ services:
       minio:
         condition: service_healthy
 
+  # metabase:
+  #   image: 'metabase/metabase:latest'
+  #   restart: always
+  #   ports:
+  #     - "4000:3000"
+  #   volumes:
+  #     - duckdb_data:/data
+  #     - metabase_data:/metabase-data
+  #   environment:
+  #     - MB_DB_TYPE=h2
+  #   depends_on:
+  #     - dagster
+  #     - dbt
+
   metabase:
-    image: 'metabase/metabase:latest'
+    build:
+      context: .
+      dockerfile: Dockerfile.metabase
     restart: always
     ports:
       - "4000:3000"
@@ -71,10 +87,11 @@ services:
       - duckdb_data:/data
       - metabase_data:/metabase-data
     environment:
-      - MB_DB_TYPE=h2
+      - MB_PLUGINS_DIR=/home/plugins/
     depends_on:
       - dagster
       - dbt
+
 
 volumes:
   minio_data:

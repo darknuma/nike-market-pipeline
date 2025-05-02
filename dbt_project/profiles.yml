@@ -3,7 +3,7 @@ nike_market_pipeline:
   outputs:
     dev:
       type: duckdb
-      path: /data/nike_market.duckdb
+      path: /data/nike_warehouse.duckdb  # CHANGED: Match the path in Dagster
       threads: 4
       extensions:
         - parquet

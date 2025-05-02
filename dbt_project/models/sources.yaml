@@ -2,8 +2,6 @@ version: 2
 
 sources:
   - name: raw
-    database: nike_market
-    schema: main
     tables:
       - name: ad_events
         description: "Raw ad events data"
@@ -14,4 +12,4 @@ sources:
       - name: products
         description: "Raw products data"
       - name: users
-        description: "Raw users data" 
+        description: "Raw users data"

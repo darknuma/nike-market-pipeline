@@ -24,11 +24,10 @@ from .create_data import generate_nike_data
 
 @resource
 def minio_resource(context):
-    minio_endpoint = os.getenv('MINIO_ENDPOINT', 'http://minio:9000') # Default with scheme and service name
+    minio_endpoint = os.getenv('MINIO_ENDPOINT', 'http://minio:9000')
 
-    # Ensure the endpoint has a scheme if it's missing
     if not minio_endpoint.startswith('http://') and not minio_endpoint.startswith('https://'):
-         minio_endpoint = f'http://{minio_endpoint}' # Default to http if no scheme
+         minio_endpoint = f'http://{minio_endpoint}'
 
     minio_user = os.getenv('MINIO_USER')
     minio_password = os.getenv('MINIO_PASSWORD')
@@ -76,7 +75,7 @@ class GenerateUploadConfig(Config):
 
 # ============= DBT ASSETS (Modern API) =============
 
-DBT_PROJECT_DIR = Path(__file__).resolve().parent.parent.parent / "dbt_project"
+DBT_PROJECT_DIR = Path(__file__).resolve().parent.parent / "dbt_project"
 
 dbt_project = DbtProject(project_dir=DBT_PROJECT_DIR)
 dbt_resource = DbtCliResource(project_dir=DBT_PROJECT_DIR)
@@ -90,7 +89,7 @@ def nike_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 @asset
 def raw_ad_events(context: AssetExecutionContext) -> None:
     """Load raw ad events data into DuckDB."""
-    conn = duckdb.connect(database='/data/nike_market.duckdb')
+    conn = duckdb.connect(database='/data/nike_warehouse.duckdb')
     conn.execute("""
         CREATE SCHEMA IF NOT EXISTS raw;
         CREATE TABLE IF NOT EXISTS raw.ad_events (
@@ -108,7 +107,7 @@ def raw_ad_events(context: AssetExecutionContext) -> None:
 @asset
 def raw_campaigns(context: AssetExecutionContext) -> None:
     """Load raw campaigns data into DuckDB."""
-    conn = duckdb.connect(database='/data/nike_market.duckdb')
+    conn = duckdb.connect(database='/data/nike_warehouse.duckdb')
     conn.execute("""
         CREATE SCHEMA IF NOT EXISTS raw;
         CREATE TABLE IF NOT EXISTS raw.campaigns (
@@ -125,7 +124,7 @@ def raw_campaigns(context: AssetExecutionContext) -> None:
 @asset
 def raw_conversions(context: AssetExecutionContext) -> None:
     """Load raw conversions data into DuckDB."""
-    conn = duckdb.connect(database='/data/nike_market.duckdb')
+    conn = duckdb.connect(database='/data/nike_warehouse.duckdb')
     conn.execute("""
         CREATE SCHEMA IF NOT EXISTS raw;
         CREATE TABLE IF NOT EXISTS raw.conversions (
@@ -143,7 +142,7 @@ def raw_conversions(context: AssetExecutionContext) -> None:
 @asset
 def raw_products(context: AssetExecutionContext) -> None:
     """Load raw products data into DuckDB."""
-    conn = duckdb.connect(database='/data/nike_market.duckdb')
+    conn = duckdb.connect(database='/data/nike_warehouse.duckdb')
     conn.execute("""
         CREATE SCHEMA IF NOT EXISTS raw;
         CREATE TABLE IF NOT EXISTS raw.products (
@@ -159,7 +158,7 @@ def raw_products(context: AssetExecutionContext) -> None:
 @asset
 def raw_users(context: AssetExecutionContext) -> None:
     """Load raw users data into DuckDB."""
-    conn = duckdb.connect(database='/data/nike_market.duckdb')
+    conn = duckdb.connect(database='/data/nike_warehouse.duckdb')
     conn.execute("""
         CREATE SCHEMA IF NOT EXISTS raw;
         CREATE TABLE IF NOT EXISTS raw.users (
