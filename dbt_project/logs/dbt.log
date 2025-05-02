@@ -37419,3 +37419,96 @@ drop view if exists "nike_warehouse"."main"."int_product_performance__dbt_backup
 [0m07:39:40.845844 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f32be0f0d10>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f32be0f0410>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f32be0f13d0>]}
 [0m07:39:40.847509 [debug] [MainThread]: Flushing usage events
 [0m07:39:42.135657 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m13:27:00.454655 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f15a8f2f7d0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f15a8f7b790>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f15a9132210>]}
+
+
+============================== 13:27:00.470994 | 6f61450e-6258-464b-a3b5-8f71c716766a ==============================
+[0m13:27:00.470994 [info ] [MainThread]: Running with dbt=1.9.4
+[0m13:27:00.473869 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'write_json': 'True', 'log_cache_events': 'False', 'partial_parse': 'True', 'cache_selected_only': 'False', 'profiles_dir': '/dbt', 'fail_fast': 'False', 'debug': 'False', 'log_path': '/dbt/logs', 'version_check': 'True', 'warn_error': 'None', 'use_colors': 'True', 'use_experimental_parser': 'False', 'empty': 'False', 'quiet': 'False', 'no_print': 'None', 'log_format': 'default', 'static_parser': 'True', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'invocation_command': 'dbt run --select fct_time_series.sql', 'target_path': 'None', 'introspect': 'True', 'send_anonymous_usage_stats': 'True'}
+[0m13:27:00.980333 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': '6f61450e-6258-464b-a3b5-8f71c716766a', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f15a8fd19d0>]}
+[0m13:27:01.057733 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'adapter_info', 'label': '6f61450e-6258-464b-a3b5-8f71c716766a', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f15ab979f90>]}
+[0m13:27:01.069151 [info ] [MainThread]: Registered adapter: duckdb=1.9.3
+[0m13:27:01.176793 [debug] [MainThread]: checksum: b5597158181700c50f5bc1c71fe28b37a6fb85633dc5323885263678b6bc782c, vars: {}, profile: , target: , version: 1.9.4
+[0m13:27:01.884139 [debug] [MainThread]: Partial parsing enabled: 0 files deleted, 7 files added, 1 files changed.
+[0m13:27:01.886387 [debug] [MainThread]: Partial parsing: added file: nike_market_pipeline://models/marts/marketing/fct_channel_metrics.sql
+[0m13:27:01.889307 [debug] [MainThread]: Partial parsing: added file: nike_market_pipeline://models/marts/marketing/fct_campaign.sql
+[0m13:27:01.891138 [debug] [MainThread]: Partial parsing: added file: nike_market_pipeline://models/marts/marketing/fct_time_series.sql
+[0m13:27:01.892955 [debug] [MainThread]: Partial parsing: added file: nike_market_pipeline://models/marts/marketing/fct_conversion_funnel.sql
+[0m13:27:01.896441 [debug] [MainThread]: Partial parsing: added file: nike_market_pipeline://models/marts/marketing/fct_platform.sql
+[0m13:27:01.898314 [debug] [MainThread]: Partial parsing: added file: nike_market_pipeline://models/marts/products/fct_product_sales.sql
+[0m13:27:01.900128 [debug] [MainThread]: Partial parsing: added file: nike_market_pipeline://models/marts/products/fct_category_performance.sql
+[0m13:27:01.903130 [debug] [MainThread]: Partial parsing: updated file: nike_market_pipeline://models/intermediate/int_product_performance.sql
+[0m13:27:02.246726 [error] [MainThread]: Encountered an error:
+Compilation Error
+  Model 'model.nike_market_pipeline.fct_platform' (models/marts/marketing/fct_platform.sql) depends on a node named 'int_platform_performance' which was not found
+[0m13:27:02.250936 [debug] [MainThread]: Resource report: {"command_name": "run", "command_success": false, "command_wall_clock_time": 1.9026624, "process_in_blocks": "35528", "process_kernel_time": 0.375532, "process_mem_max_rss": "129804", "process_out_blocks": "32", "process_user_time": 3.146349}
+[0m13:27:02.252797 [debug] [MainThread]: Command `dbt run` failed at 13:27:02.252574 after 1.91 seconds
+[0m13:27:02.254210 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f15a8f34210>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f15a4db8290>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f15a8f2c390>]}
+[0m13:27:02.255623 [debug] [MainThread]: Flushing usage events
+[0m13:27:03.531365 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m13:29:49.465296 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fed4d6c04d0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fed4dd9ad50>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fed4d6c3c50>]}
+
+
+============================== 13:29:49.472345 | 25d5d69d-3a53-4b47-9869-1c5ac0a5f3ed ==============================
+[0m13:29:49.472345 [info ] [MainThread]: Running with dbt=1.9.4
+[0m13:29:49.474039 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'log_cache_events': 'False', 'write_json': 'True', 'partial_parse': 'True', 'cache_selected_only': 'False', 'warn_error': 'None', 'version_check': 'True', 'profiles_dir': '/dbt', 'log_path': '/dbt/logs', 'fail_fast': 'False', 'debug': 'False', 'use_colors': 'True', 'use_experimental_parser': 'False', 'no_print': 'None', 'quiet': 'False', 'empty': 'False', 'log_format': 'default', 'invocation_command': 'dbt run --select int_platform_performance.sql', 'static_parser': 'True', 'introspect': 'True', 'target_path': 'None', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'send_anonymous_usage_stats': 'True'}
+[0m13:29:49.829354 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': '25d5d69d-3a53-4b47-9869-1c5ac0a5f3ed', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fed4a0b9250>]}
+[0m13:29:49.935864 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'adapter_info', 'label': '25d5d69d-3a53-4b47-9869-1c5ac0a5f3ed', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fed500ee890>]}
+[0m13:29:49.941630 [info ] [MainThread]: Registered adapter: duckdb=1.9.3
+[0m13:29:50.044146 [debug] [MainThread]: checksum: b5597158181700c50f5bc1c71fe28b37a6fb85633dc5323885263678b6bc782c, vars: {}, profile: , target: , version: 1.9.4
+[0m13:29:51.055174 [debug] [MainThread]: Partial parsing enabled: 0 files deleted, 8 files added, 1 files changed.
+[0m13:29:51.057328 [debug] [MainThread]: Partial parsing: added file: nike_market_pipeline://models/marts/marketing/fct_time_series.sql
+[0m13:29:51.059181 [debug] [MainThread]: Partial parsing: added file: nike_market_pipeline://models/marts/products/fct_product_sales.sql
+[0m13:29:51.061195 [debug] [MainThread]: Partial parsing: added file: nike_market_pipeline://models/marts/marketing/fct_platform.sql
+[0m13:29:51.062297 [debug] [MainThread]: Partial parsing: added file: nike_market_pipeline://models/marts/products/fct_category_performance.sql
+[0m13:29:51.063696 [debug] [MainThread]: Partial parsing: added file: nike_market_pipeline://models/marts/marketing/fct_channel_metrics.sql
+[0m13:29:51.065339 [debug] [MainThread]: Partial parsing: added file: nike_market_pipeline://models/intermediate/int_platform_performance.sql
+[0m13:29:51.066731 [debug] [MainThread]: Partial parsing: added file: nike_market_pipeline://models/marts/marketing/fct_campaign.sql
+[0m13:29:51.068842 [debug] [MainThread]: Partial parsing: added file: nike_market_pipeline://models/marts/marketing/fct_conversion_funnel.sql
+[0m13:29:51.070863 [debug] [MainThread]: Partial parsing: updated file: nike_market_pipeline://models/intermediate/int_product_performance.sql
+[0m13:29:51.530355 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'load_project', 'label': '25d5d69d-3a53-4b47-9869-1c5ac0a5f3ed', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fed49374f10>]}
+[0m13:29:51.674449 [debug] [MainThread]: Wrote artifact WritableManifest to /dbt/target/manifest.json
+[0m13:29:51.686467 [debug] [MainThread]: Wrote artifact SemanticManifest to /dbt/target/semantic_manifest.json
+[0m13:29:51.754961 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'resource_counts', 'label': '25d5d69d-3a53-4b47-9869-1c5ac0a5f3ed', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fed493f0050>]}
+[0m13:29:51.756838 [info ] [MainThread]: Found 18 models, 5 sources, 428 macros
+[0m13:29:51.758099 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': '25d5d69d-3a53-4b47-9869-1c5ac0a5f3ed', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fed49314c50>]}
+[0m13:29:51.762918 [info ] [MainThread]: 
+[0m13:29:51.764537 [info ] [MainThread]: Concurrency: 4 threads (target='dev')
+[0m13:29:51.766326 [info ] [MainThread]: 
+[0m13:29:51.768575 [debug] [MainThread]: Acquiring new duckdb connection 'master'
+[0m13:29:51.772004 [debug] [ThreadPool]: Acquiring new duckdb connection 'list_nike_warehouse'
+[0m13:29:51.879413 [debug] [ThreadPool]: Using duckdb connection "list_nike_warehouse"
+[0m13:29:51.881609 [debug] [ThreadPool]: On list_nike_warehouse: /* {"app": "dbt", "dbt_version": "1.9.4", "profile_name": "nike_market_pipeline", "target_name": "dev", "connection_name": "list_nike_warehouse"} */
+
+    
+    select schema_name
+    from system.information_schema.schemata
+    
+    where lower(catalog_name) = '"nike_warehouse"'
+    
+  
+  
+[0m13:29:51.884509 [debug] [ThreadPool]: Opening a new connection, currently in state init
+[0m13:29:51.976933 [debug] [ThreadPool]: DuckDB adapter: Error running SQL: /* {"app": "dbt", "dbt_version": "1.9.4", "profile_name": "nike_market_pipeline", "target_name": "dev", "connection_name": "list_nike_warehouse"} */
+
+    
+    select schema_name
+    from system.information_schema.schemata
+    
+    where lower(catalog_name) = '"nike_warehouse"'
+    
+  
+  
+[0m13:29:51.979426 [debug] [ThreadPool]: DuckDB adapter: Rolling back transaction.
+[0m13:29:51.983271 [debug] [MainThread]: Connection 'master' was properly closed.
+[0m13:29:51.985804 [debug] [MainThread]: Connection 'list_nike_warehouse' was properly closed.
+[0m13:29:51.989074 [info ] [MainThread]: 
+[0m13:29:51.991338 [info ] [MainThread]: Finished running  in 0 hours 0 minutes and 0.22 seconds (0.22s).
+[0m13:29:51.993110 [error] [MainThread]: Encountered an error:
+Runtime Error
+  IO Error: Could not set lock on file "/data/nike_warehouse.duckdb": Conflicting lock is held in PID 0. See also https://duckdb.org/docs/connect/concurrency
+[0m13:29:51.995708 [debug] [MainThread]: Resource report: {"command_name": "run", "command_success": false, "command_wall_clock_time": 2.6493084, "process_in_blocks": "28824", "process_kernel_time": 0.43668, "process_mem_max_rss": "145556", "process_out_blocks": "128", "process_user_time": 3.432509}
+[0m13:29:51.998314 [debug] [MainThread]: Command `dbt run` failed at 13:29:51.998061 after 2.65 seconds
+[0m13:29:52.000494 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fed4d9ec550>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fed4d6c8210>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7fed493d4850>]}
+[0m13:29:52.003420 [debug] [MainThread]: Flushing usage events
+[0m13:29:53.323344 [debug] [MainThread]: An error was encountered while trying to flush usage events

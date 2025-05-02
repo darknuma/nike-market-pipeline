@@ -3,14 +3,14 @@ nike_market_pipeline:
   outputs:
     dev:
       type: duckdb
-      path: /data/nike_warehouse.duckdb  # CHANGED: Match the path in Dagster
+      path: /data/nike_warehouse.duckdb 
       threads: 4
       extensions:
         - parquet
         - httpfs
-      external_root: 's3://nike-data'  # MinIO bucket
+      external_root: 's3://nike-data'
       settings:
-        s3_endpoint: 'minio:9000'  # Docker service name
+        s3_endpoint: 'minio:9000'
         s3_access_key_id: '{{ env_var("MINIO_USER") }}'
         s3_secret_access_key: '{{ env_var("MINIO_PASSWORD") }}'
         s3_use_ssl: false
