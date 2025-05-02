@@ -1,9 +1,6 @@
-# dagster/workspace.yaml
 load_from:
   - python_file:
-      # Path to the Python file containing your repository definition,
-      # relative to the directory where workspace.yaml is located (/app/dagster)
+
       relative_path: repository.py
 
-      # The name of the repository object within the repository.py file
       attribute: nike_data_repo

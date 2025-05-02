@@ -12,7 +12,6 @@ DEFAULT_BATCH_SIZE = 1000  # Adjust batch size as needed
 OUTPUT_DIR = "nike_data"
 METADATA_FILE = f"{OUTPUT_DIR}/metadata.json"
 
-# Nike-specific settings
 NIKE_SEGMENTS = ["Sneakerheads", "Runners", "Athletes", "Parents"]
 NIKE_CHANNELS = ["Email", "Search", "Social", "App", "TikTok", "Instagram"]
 NIKE_CATEGORIES = ["Running", "Basketball", "Jordan", "Training", "Lifestyle"]
@@ -22,7 +21,6 @@ NIKE_CAMPAIGNS = [
 ]
 NIKE_PLATFORMS = ["iOS", "Android", "Web"]
 
-# Initialize Faker
 fake = Faker()
 
 
@@ -46,14 +44,12 @@ def append_parquet(data, filename, schema):
     """ Append new data to an existing Parquet file """
     path = f"{OUTPUT_DIR}/{filename}"
     
-    # If file exists, append data
     if os.path.exists(path):
         existing_table = pq.read_table(path)
         new_table = pa.Table.from_pylist(data, schema=pa.schema(schema))
         merged_table = pa.concat_tables([existing_table, new_table])
         pq.write_table(merged_table, path)
     else:
-        # Write new file if it doesn't exist
         table = pa.Table.from_pylist(data, schema=pa.schema(schema))
         pq.write_table(table, path)
 
@@ -93,7 +89,6 @@ def random_campaign():
 def random_ad_interaction(user_id, campaign_id, last_timestamp):
     ts = fake.date_time_this_year()
     
-    # Ensure only new timestamps are generated
     if last_timestamp and ts <= last_timestamp:
         return None
 
@@ -110,7 +105,6 @@ def random_ad_interaction(user_id, campaign_id, last_timestamp):
 def random_conversion(user_id, product_id, campaign_id, last_timestamp):
     ts = fake.date_time_this_year()
     
-    # Ensure only new timestamps are generated
     if last_timestamp and ts <= last_timestamp:
         return None
 
@@ -156,7 +150,6 @@ def generate_nike_data(batch_size=DEFAULT_BATCH_SIZE):
             if conv:
                 conversions.append(conv)
 
-    # Append data to Parquet files
     append_parquet(users, "users.parquet", [
         ("user_id", pa.string()), ("name", pa.string()), ("email", pa.string()), 
         ("segment", pa.string()), ("signup_date", pa.date32())
@@ -182,7 +175,6 @@ def generate_nike_data(batch_size=DEFAULT_BATCH_SIZE):
         ("campaign_id", pa.string()), ("timestamp", pa.timestamp("ms")), ("revenue", pa.float64())
     ])
 
-    # Save last processed timestamp
     save_last_timestamp(new_timestamp)
     print(f"✅ New data generated and saved up to {new_timestamp}")
 

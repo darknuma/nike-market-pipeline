@@ -7,13 +7,11 @@ import pyarrow as pa
 from datetime import datetime
 import json
 
-# Configuration
-MINIO_ENDPOINT = os.getenv('MINIO_ENDPOINT', 'http://minio:9000')  # Use Docker service name
-MINIO_BUCKET = "nike-data"
+MINIO_ENDPOINT = os.getenv('MINIO_ENDPOINT', 'http://minio:9000') 
 RAW_PREFIX = "raw/"
-DB_PATH = "/data/nike_warehouse.duckdb"  # Use Docker mounted path
+DB_PATH = "/data/nike_warehouse.duckdb" 
+MINIO_BUCKET="nike-data"
 
-# Table schemas for DuckDB
 TABLE_SCHEMAS = {
     "users": """
         CREATE TABLE IF NOT EXISTS users (
@@ -87,7 +85,6 @@ def get_minio_client():
 def get_latest_parquet_files(client, table_name):
     """Get the latest Parquet file for each table from MinIO"""
     try:
-        # List objects in the raw prefix for the specific table
         response = client.list_objects_v2(
             Bucket=MINIO_BUCKET,
             Prefix=f"{RAW_PREFIX}{table_name}/"
@@ -96,7 +93,6 @@ def get_latest_parquet_files(client, table_name):
         if 'Contents' not in response:
             return None
             
-        # Get the latest file based on timestamp in the path
         latest_file = max(
             response['Contents'],
             key=lambda x: x['Key'].split('/')[-1].split('.')[0]
@@ -110,30 +106,24 @@ def get_latest_parquet_files(client, table_name):
 def load_table_from_minio(client, conn, table_name):
     """Load data from MinIO into DuckDB with CDC support"""
     try:
-        # Get the latest Parquet file
         latest_file = get_latest_parquet_files(client, table_name)
         if not latest_file:
             print(f"No files found for table {table_name}")
             return
             
-        # Download the Parquet file to a temporary location
         temp_file = f"temp_{table_name}.parquet"
         client.download_file(MINIO_BUCKET, latest_file, temp_file)
         
-        # Read the Parquet file
         table = pq.read_table(temp_file)
         
-        # Add _loaded_at timestamp
         current_time = datetime.now()
         table = table.append_column('_loaded_at', 
                                   pa.array([current_time] * len(table)))
         
-        # Create temporary table for the new data
         temp_table_name = f"temp_{table_name}"
         conn.execute(f"DROP TABLE IF EXISTS {temp_table_name}")
         conn.execute(f"CREATE TABLE {temp_table_name} AS SELECT * FROM table")
         
-        # Merge data into the main table
         merge_query = f"""
             MERGE INTO {table_name} t
             USING {temp_table_name} s
@@ -147,7 +137,6 @@ def load_table_from_minio(client, conn, table_name):
         """
         conn.execute(merge_query)
         
-        # Clean up
         conn.execute(f"DROP TABLE IF EXISTS {temp_table_name}")
         os.remove(temp_file)
         
@@ -159,17 +148,13 @@ def load_table_from_minio(client, conn, table_name):
 def main():
     """Main function to handle the loading process"""
     try:
-        # Connect to MinIO
         minio_client = get_minio_client()
         
-        # Connect to DuckDB
         conn = duckdb.connect(DB_PATH)
         
-        # Create tables if they don't exist
         for table_name, schema in TABLE_SCHEMAS.items():
             conn.execute(schema)
         
-        # Load data for each table
         for table_name in TABLE_SCHEMAS.keys():
             load_table_from_minio(minio_client, conn, table_name)
         

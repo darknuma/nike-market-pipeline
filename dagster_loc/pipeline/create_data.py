@@ -12,12 +12,10 @@ from faker import Faker
 import boto3
 from botocore.config import Config
 
-# Config
 DEFAULT_BATCH_SIZE = 1000
 MINIO_BUCKET = os.getenv("MINIO_BUCKET", "nike-data")
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "http://minio:9000")
 
-# Initialize Faker and S3 client
 fake = Faker()
 s3_client = boto3.client(
     "s3",
@@ -27,7 +25,6 @@ s3_client = boto3.client(
     config=Config(signature_version="s3v4"),
 )
 
-# Schema mappings
 SCHEMAS = {
     "users": [("user_id", pa.string()), ("name", pa.string()), ("email", pa.string()), ("segment", pa.string()), ("signup_date", pa.date32())],
     "products": [("product_id", pa.string()), ("name", pa.string()), ("category", pa.string()), ("price", pa.float64())],
@@ -36,7 +33,6 @@ SCHEMAS = {
     "conversions": [("conversion_id", pa.string()), ("user_id", pa.string()), ("product_id", pa.string()), ("campaign_id", pa.string()), ("timestamp", pa.timestamp("ms")), ("revenue", pa.float64())],
 }
 
-# Nike-specific settings
 NIKE_SEGMENTS = ["Sneakerheads", "Runners", "Athletes", "Parents"]
 NIKE_CHANNELS = ["Email", "Search", "Social", "App", "TikTok", "Instagram"]
 NIKE_CATEGORIES = ["Running", "Basketball", "Jordan", "Training", "Lifestyle"]

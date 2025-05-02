@@ -211,7 +211,6 @@ def load_raw_data_to_duckdb_op(context, data_keys):
             obj = minio_client.get_object(Bucket=bucket_name, Key=key)
             parquet_bytes = obj['Body'].read()
             
-            # Get the dataset name from the key (format: "dataset_name/timestamp.parquet")
             dataset_name = key.split('/')[0]
             context.log.info(f"Loading data for dataset: {dataset_name}")
             
@@ -221,11 +220,9 @@ def load_raw_data_to_duckdb_op(context, data_keys):
             # Add _loaded_at timestamp
             df['_loaded_at'] = pd.Timestamp.now()
             
-            # Ensure raw schema exists
             duckdb_conn.execute("CREATE SCHEMA IF NOT EXISTS raw")
             
-            # Create table if not exists based on dataset name
-            # Assume consistent schema for each dataset type
+
             if dataset_name == "users":
                 duckdb_conn.execute("""
                     CREATE TABLE IF NOT EXISTS raw.users (
@@ -283,7 +280,6 @@ def load_raw_data_to_duckdb_op(context, data_keys):
                     )
                 """)
             
-            # Insert data
             duckdb_conn.execute(f"INSERT INTO raw.{dataset_name} SELECT * FROM df")
             context.log.info(f"Successfully loaded {len(df)} rows into raw.{dataset_name}")
             
@@ -296,15 +292,11 @@ def load_raw_data_to_duckdb_op(context, data_keys):
 @op(required_resource_keys={"dbt"}) # Only requires dbt resource
 def run_dbt_models_op(context: OpExecutionContext, start_after): # Input name should match upstream output
     """Runs dbt build command."""
-    # The 'start_after' input ensures this op runs after the previous one completes.
-    # Its value (the dict from load_raw_data_to_duckdb_op) isn't explicitly used here,
-    # but the dependency is enforced by Dagster.
     context.log.info(f"Received start signal: {start_after}. Running dbt models...")
 
     dbt_cli_resource = context.resources.dbt
 
     try:
-        # Use stream() to get real-time logs in Dagster UI
         dbt_cli_invocation = dbt_cli_resource.cli(["build"], context=context)
         for log_line in dbt_cli_invocation.stream():
             context.log.info(log_line) # Stream dbt logs to Dagster logs
@@ -318,9 +310,9 @@ def run_dbt_models_op(context: OpExecutionContext, start_after): # Input name sh
     except Exception as e:
         context.log.error("dbt build command failed.")
         context.log.exception(e)
-        raise # Fail the op if dbt fails
+        raise 
 
-    return True # Indicate success
+    return True 
 
 # ============= JOB =============
 
@@ -349,7 +341,8 @@ def hourly_nike_data_schedule(context):
         "ops": {
             "generate_and_upload_nike_data_op": {
                  "config": {
-                "batch_size": 2000  # Or whatever value you want
+                     # this batch size can be adjusted 
+                "batch_size": 2000
             }
         }
     }

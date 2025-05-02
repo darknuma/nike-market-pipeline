@@ -4,14 +4,11 @@ ENV MB_PLUGINS_DIR=/home/plugins/
 
 ADD https://downloads.metabase.com/v0.52.4/metabase.jar /home/metabase.jar
 
-# Create plugins directory
 RUN mkdir -p /home/plugins/
 
-# Copy the DuckDB driver from local directory
-COPY metabase/duckdb.metabase-driver.jar /home/plugins/
+# manually downloaded the duckdb driver
+COPY metabase/duckdb.metabase-driver.jar /home/plugins/ 
 
-# Set file permissions
 RUN chmod 744 /home/plugins/duckdb.metabase-driver.jar
 
-# Run Metabase
 CMD ["java", "-jar", "/home/metabase.jar"]
