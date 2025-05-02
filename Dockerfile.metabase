@@ -1,11 +1,14 @@
-
 FROM openjdk:19-buster
 
 ENV MB_PLUGINS_DIR=/home/plugins/
 
 ADD https://downloads.metabase.com/v0.52.4/metabase.jar /home/metabase.jar
 
-ADD https://github.com/MotherDuck-Open-Source/metabase_duckdb_driver/releases/download/0.2.12/duckdb.metabase-driver.jar /home/plugins/
+# Create plugins directory
+RUN mkdir -p /home/plugins/
+
+# Copy the DuckDB driver from local directory
+COPY metabase/duckdb.metabase-driver.jar /home/plugins/
 
 # Set file permissions
 RUN chmod 744 /home/plugins/duckdb.metabase-driver.jar

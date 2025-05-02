@@ -31,3 +31,4 @@ dagster_loc/storage/
 dbt_project/target/
 dbt_project/logs/
 data/
+metabase
